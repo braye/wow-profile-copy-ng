@@ -5,7 +5,7 @@
  */
 
 use crate::wow::{self, Install, Version, Wtf};
-use iced::{alignment, Element, Fill};
+use iced::{alignment, Element, FillPortion, Fill};
 use iced::widget::{Container, container, scrollable, row, button, column, text};
 use std::{env, path::PathBuf, ffi::OsString, fs, io::Error};
 
@@ -163,18 +163,18 @@ impl Operation {
 
         container(
             column![
-                row![
-                    text(install.install_dir.to_str().unwrap()).center().size(20),
+                column![
+                    text("Installation Folder: ".to_owned() + install.install_dir.to_str().unwrap()).center(),
                     button("Change").on_press(Message::Install)
-                ].spacing(15),
+                ].spacing(15).height(FillPortion(1)),
                 row![
-                    Operation::ver_column(self, true), // source
-                    Operation::ver_column(self, false) // target
-                ],
+                    Operation::ver_column(self, true).width(FillPortion(2)), // source
+                    Operation::ver_column(self, false).width(FillPortion(2)) // target
+                ].height(FillPortion(7)),
                 scrollable(
                     log
-                ).height(100),
-                row![button("Go!").padding(5).on_press(Message::Copy)]
+                ).height(FillPortion(2)),
+                row![button("Go!").padding(5).on_press(Message::Copy)].height(FillPortion(1))
             ]
             .spacing(10)
         )
@@ -221,10 +221,9 @@ impl Operation {
 
         let widgets = if ver.is_none() {
             column(install.versions.iter().map(|v| {
-                button(text(v.to_string()).center())
+                button(text(v.to_string()).width(Fill).center())
                 .on_press(ver_msg(v.clone()))
-                .width(300)
-                .height(75)
+                .height(50)
                 .into()
             }))
         } else if wtf.is_none() {
@@ -236,9 +235,8 @@ impl Operation {
                 .wtfs
                 .iter()
                 .map(|w| {
-                    button(text(w.to_string()))
+                    button(text(w.to_string()).width(Fill).center())
                     .on_press(wtf_msg(w.clone()))
-                    .width(400)
                     .into()
                 })
             )
@@ -261,8 +259,8 @@ impl Operation {
                 )
             ].spacing(10)
         )
-        .width(500)
-        .max_height(500)
+        .width(Fill)
+        .height(Fill)
         .style(container::bordered_box)
         .padding(10)
         .align_x(alignment::Horizontal::Center)

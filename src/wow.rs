@@ -42,10 +42,9 @@ impl std::fmt::Display for Version {
 
 impl std::fmt::Display for Wtf {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} - {} - {}",
+        write!(f, "{} - {}",
         self.character.to_str().unwrap_or_default(),
-        self.realm.to_str().unwrap_or_default(),
-        self.account.to_str().unwrap_or_default(),
+        self.realm.to_str().unwrap_or_default()
     )
     }
 }
