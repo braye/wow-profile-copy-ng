@@ -2,6 +2,8 @@
 
 Now with more buttons!
 
+![](image.png)
+
 This is a complete rewrite (in rust, of course) of wow-profile-copy. The explicit goal was to add a graphical user interface to the application, rather than the TUI of the original.
 
 TUIs are functional, but they're not intuitive or pretty. And well, this isn't pretty right now but I think it'll be more intuitive for the average WoW player.
