@@ -8,6 +8,12 @@ This is a complete rewrite (in rust, of course) of wow-profile-copy. The explici
 
 TUIs are functional, but they're not intuitive or pretty. And well, this isn't pretty right now but I think it'll be more intuitive for the average WoW player.
 
+## Why use this?
+
+It's PTR week. Your guild wants to run the raid. You don't want to mess with setting up your weakauras, raid frames, and keybinds. 
+
+Half a dozen clicks, and everything should be right where you expect it.
+
 ## Backups
 
 This software overwrites large amounts of configuration data automatically. There is no "undo". For that reason, before you copy profiles around, you should consider taking a backup.
