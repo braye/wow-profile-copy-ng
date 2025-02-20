@@ -2,7 +2,7 @@
 
 Now with more buttons!
 
-![](assets/demo.mp4)
+https://github.com/user-attachments/assets/176009c2-36b9-4706-9d7d-599a977aec30
 
 This is a complete rewrite (in rust, of course) of wow-profile-copy. The explicit goal was to add a graphical user interface to the application, rather than the TUI of the original.
 
