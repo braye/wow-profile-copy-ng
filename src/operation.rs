@@ -5,9 +5,10 @@
  */
 
 use crate::wow::{self, Install, Version, Wtf};
-use iced::{alignment, Element, FillPortion, Fill};
+use iced::{alignment, border, Element, Fill, FillPortion, Font, Theme};
 use iced::widget::{Container, container, scrollable, row, button, column, text};
 use std::{env, path::PathBuf, ffi::OsString, fs, io::Error};
+use dark_light;
 
 
 // todo: change to Option<&T>
@@ -129,6 +130,15 @@ impl Operation {
         }
     }
 
+    pub fn theme(&self) -> Theme  {
+        // there's probably a way to do this without this crate but i'm feeling lazy
+        match dark_light::detect().unwrap_or_else(|_e| dark_light::Mode::Unspecified) {
+            dark_light::Mode::Dark => Theme::SolarizedDark,
+            dark_light::Mode::Light => Theme::SolarizedLight,
+            dark_light::Mode::Unspecified => Theme::SolarizedDark,
+        }
+    }
+
     fn is_ready(&self) -> bool {
         self.install.is_some() 
         && self.src_ver.is_some() 
@@ -154,27 +164,31 @@ impl Operation {
         let install = self.install.as_ref().unwrap();
 
         let log = if self.copy_logs.is_none() {
-            text("")
+            scrollable(text(""))
         } else {
-            text(
-                self.copy_logs.as_ref().unwrap().join("\n")
+            scrollable(
+                text(
+                    self.copy_logs.as_ref().unwrap().join("\n")
+                ).font(Font::with_name("B612 Mono"))
             )
         };
 
+        // todo: clean this mess up
         container(
             column![
                 column![
                     text("Installation Folder: ".to_owned() + install.install_dir.to_str().unwrap()).center(),
                     button("Change").on_press(Message::Install)
-                ].spacing(15).height(FillPortion(1)),
+                ].spacing(15),
                 row![
                     Operation::ver_column(self, true).width(FillPortion(2)), // source
                     Operation::ver_column(self, false).width(FillPortion(2)) // target
                 ].height(FillPortion(7)),
-                scrollable(
-                    log
-                ).height(FillPortion(2)),
-                row![button("Go!").padding(5).on_press(Message::Copy)].height(FillPortion(1))
+                container(column![text("Logs"), log]).padding(8).style(|theme: &Theme| {
+                    container::Style::default()
+                        .border(border::color(theme.palette().primary).width(2).rounded(5))
+                }).height(FillPortion(2)).width(Fill),
+                row![button("Go!").padding(5).on_press(Message::Copy).style(button::success)]
             ]
             .spacing(10)
         )
@@ -246,18 +260,19 @@ impl Operation {
         };
 
         let source_text = if is_source {
-            text("Source").center().size(18)
+            text("Source")
         } else {
-            text("Target").center().size(18)
+            text("Target")
         };
 
         container(
             column![
-                row![source_text, button("Reset").on_press(rst_msg)].spacing(5),
+                source_text,
                 scrollable(
                     widgets.padding(20).spacing(15)
-                )
-            ].spacing(10)
+                ).height(FillPortion(9)),
+                button("Reset").on_press(rst_msg)
+            ].spacing(10).width(Fill).height(Fill)
         )
         .width(Fill)
         .height(Fill)
@@ -301,7 +316,7 @@ fn do_copy(op: &Operation) -> Result<Vec<String>, Error> {
             let src = src_root.join(file);
             let dst = dst_root.join(file);
             let output = match fs::copy(&src, &dst) {
-                Ok(_) => format!("copied {:?}", src.as_os_str()),
+                Ok(_) => format!("copied {:?}", src.file_name().unwrap_or_default()),
                 Err(e) => format!("error copying {:?}: {}", src.as_os_str(), e.to_string())
             };
             log.push(output);
@@ -328,7 +343,7 @@ fn do_copy(op: &Operation) -> Result<Vec<String>, Error> {
             let src = src_savedvars.join(e.file_name());
             let dst = dst_savedvars.join(e.file_name());
             let output = match fs::copy(&src, &dst) {
-                Ok(_) => format!("copied {:?}", src.as_os_str()),
+                Ok(_) => format!("copied {:?}", src.file_name().unwrap_or_default()),
                 Err(e) => format!("error copying {:?}: {}", src.as_os_str(), e.to_string())
             };
             log.push(output);
@@ -336,7 +351,7 @@ fn do_copy(op: &Operation) -> Result<Vec<String>, Error> {
 
         let cache = dst_root.join("cache.md5");
         let output = match fs::remove_file(&cache) {
-            Ok(_) => format!("removed {:?}", cache.as_os_str()),
+            Ok(_) => format!("removed {:?}", cache.file_name().unwrap_or_default()),
             Err(e) => format!("error removing {:?}: {}", cache.as_os_str(), e.to_string())
         };
         log.push(output);
@@ -357,7 +372,7 @@ fn do_copy(op: &Operation) -> Result<Vec<String>, Error> {
         let src = src_character.join(file);
         let dst = dst_character.join(file);
         let output = match fs::copy(&src, &dst) {
-            Ok(_) => format!("copied {:?}", dst.as_os_str()),
+            Ok(_) => format!("copied {:?}", dst.file_name().unwrap_or_default()),
             Err(e) => format!("error copying {:?}: {}", dst.as_os_str(), e.to_string())
         };
         log.push(output);
@@ -368,6 +383,7 @@ fn do_copy(op: &Operation) -> Result<Vec<String>, Error> {
     let dst_savedvars = dst_character.join("SavedVariables");
     
     if !dst_savedvars.try_exists()? {
+        log.push(format!("destination savedvariables dir missing, creating: {:?}", dst_savedvars.as_os_str()));
         fs::create_dir_all(&dst_savedvars)?;
     }
 
@@ -387,7 +403,7 @@ fn do_copy(op: &Operation) -> Result<Vec<String>, Error> {
         let src = src_savedvars.join(e.file_name());
         let dst = dst_savedvars.join(e.file_name());
         let output = match fs::copy(&src, &dst) {
-            Ok(_) => format!("copied {:?}", dst.as_os_str()),
+            Ok(_) => format!("copied {:?}", dst.file_name().unwrap_or_default()),
             Err(e) => format!("error copying {:?}: {}", dst.as_os_str(), e.to_string())
         };
         log.push(output);
@@ -395,7 +411,7 @@ fn do_copy(op: &Operation) -> Result<Vec<String>, Error> {
 
     let cache = dst_character.join("cache.md5");
     let output = match fs::remove_file(&cache) {
-        Ok(_) => format!("removed {:?}", cache.as_os_str()),
+        Ok(_) => format!("removed {:?}", cache.file_name().unwrap_or_default()),
         Err(e) => format!("error removing {:?}: {}", cache.as_os_str(), e.to_string())
     };
     log.push(output);

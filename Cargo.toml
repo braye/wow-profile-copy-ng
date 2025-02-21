@@ -4,5 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+dark-light = "2.0.0"
 iced = "0.13.1"
 rfd = "0.15.2"
