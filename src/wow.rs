@@ -24,6 +24,7 @@ pub struct Wtf {
     pub account: OsString,
     pub realm: OsString,
     pub character: OsString,
+    pub has_vars: bool
 }
 
 impl std::fmt::Display for Version {
@@ -110,6 +111,7 @@ fn get_wtf_configurations(version: &DirEntry) -> Result<Vec<Wtf>, io::Error> {
                                 account: account.file_name(),
                                 realm: realm.file_name(),
                                 character: char.file_name(),
+                                has_vars: char.path().join("SavedVariables").try_exists()?,
                             })
                         }
                     }

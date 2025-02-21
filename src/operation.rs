@@ -248,6 +248,10 @@ impl Operation {
                 .unwrap()
                 .wtfs
                 .iter()
+                .filter(|w| {
+                    println!("{}: {is_source} - {}", w, w.has_vars);
+                    !is_source || (is_source && w.has_vars)
+                })
                 .map(|w| {
                     button(text(w.to_string()).width(Fill).center())
                     .on_press(wtf_msg(w.clone()))
