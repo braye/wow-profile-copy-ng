@@ -6,7 +6,7 @@
 
 use crate::wow::{self, Install, Version, Wtf};
 use iced::{alignment, border, Element, Fill, FillPortion, Font, Theme};
-use iced::widget::{Container, container, scrollable, row, button, column, text};
+use iced::widget::{button, column, container, horizontal_rule, row, scrollable, text, Container};
 use std::{env, path::PathBuf, ffi::OsString, fs, io::Error};
 use dark_light;
 
@@ -184,7 +184,7 @@ impl Operation {
                     Operation::ver_column(self, true).width(FillPortion(2)), // source
                     Operation::ver_column(self, false).width(FillPortion(2)) // target
                 ].height(FillPortion(7)),
-                container(column![text("Logs"), log]).padding(8).style(|theme: &Theme| {
+                container(column![text("Logs"), horizontal_rule(2), log].spacing(5)).padding(8).style(|theme: &Theme| {
                     container::Style::default()
                         .border(border::color(theme.palette().primary).width(2).rounded(5))
                 }).height(FillPortion(2)).width(Fill),
@@ -248,10 +248,7 @@ impl Operation {
                 .unwrap()
                 .wtfs
                 .iter()
-                .filter(|w| {
-                    println!("{}: {is_source} - {}", w, w.has_vars);
-                    !is_source || (is_source && w.has_vars)
-                })
+                .filter(|w| !is_source || (is_source && w.has_vars))
                 .map(|w| {
                     button(text(w.to_string()).width(Fill).center())
                     .on_press(wtf_msg(w.clone()))

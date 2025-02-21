@@ -6,7 +6,7 @@
 
 use std::borrow::Cow;
 
-use iced::{font, Font, Theme};
+use iced::{font, Font};
 
 use crate::operation::Operation;
 
