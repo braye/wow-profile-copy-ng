@@ -24,6 +24,7 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
+        name: wow-profile-copy-ng-linux-git
         path: target/debug/wow-profile-copy-ng
 
   build-windows:
@@ -39,4 +40,5 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
+        name: wow-profile-copy-ng-windows-git
         path: target/debug/wow-profile-copy-ng.exe
