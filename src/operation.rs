@@ -6,7 +6,7 @@
 
 use crate::wow::{self, Install, Version, Wtf};
 use iced::{alignment, border, Element, Fill, FillPortion, Font, Theme};
-use iced::widget::{button, column, container, horizontal_rule, row, scrollable, text, Container};
+use iced::widget::{button, checkbox, column, container, horizontal_rule, row, scrollable, text, Container};
 use std::{env, path::PathBuf, ffi::OsString, fs, io::Error};
 use dark_light;
 
@@ -19,7 +19,8 @@ pub struct Operation {
     src_wtf: Option<Wtf>,
     dst_ver: Option<Version>,
     dst_wtf: Option<Wtf>,
-    copy_logs: Option<Vec<String>>
+    copy_logs: Option<Vec<String>>,
+    overwrite_account: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -28,7 +29,8 @@ pub enum Message {
     Version(Version, bool),
     Wtf(Wtf, bool),
     Copy,
-    Reset(bool)
+    Reset(bool),
+    OverwriteToggle(bool),
 }
 
 
@@ -49,6 +51,7 @@ impl std::default::Default for Operation {
                     src_wtf: None,
                     dst_wtf: None,
                     copy_logs: None,
+                    overwrite_account: true
                 }
             }
             folder = PathBuf::from(home.unwrap())
@@ -62,6 +65,7 @@ impl std::default::Default for Operation {
                 src_wtf: None,
                 dst_wtf: None,
                 copy_logs: None,
+                overwrite_account: true
             }
         }
 
@@ -74,6 +78,7 @@ impl std::default::Default for Operation {
                     src_wtf: None,
                     dst_wtf: None,
                     copy_logs: None,
+                    overwrite_account: true
                 }
             }
             Err(_) => {
@@ -84,6 +89,7 @@ impl std::default::Default for Operation {
                     src_wtf: None,
                     dst_wtf: None,
                     copy_logs: None,
+                    overwrite_account: true
                 }
             }
         }
@@ -93,6 +99,7 @@ impl std::default::Default for Operation {
 impl Operation {
     pub fn update(&mut self, message: Message) {
         match message {
+            Message::OverwriteToggle(o) => self.overwrite_account = o,
             Message::Install => {
                 let inst = wow::prompt_folder();
                 if inst.is_some() {
@@ -153,6 +160,14 @@ impl Operation {
         && self.src_wtf.is_some() 
         && self.dst_ver.is_some()
         && self.dst_wtf.is_some()
+    }
+
+    fn is_same_account(&self) -> Option<bool> {
+        if self.src_wtf.is_none() || self.dst_wtf.is_none() {
+            return None
+        }
+
+        Some(self.src_wtf.as_ref().unwrap().account != self.dst_wtf.as_ref().unwrap().account)
     }
 
     pub fn view(&self) -> Element<Message> {
@@ -270,10 +285,16 @@ impl Operation {
                 })
             )
         } else {
+            let toggle = if !is_source && self.is_same_account().unwrap_or(false) {
+                Some(checkbox("Overwrite account-level variables?", self.overwrite_account)
+                .on_toggle(Message::OverwriteToggle))
+            } else {
+                None
+            };
             column![
                 text(ver.as_ref().unwrap().to_string()),
                 text(wtf.as_ref().unwrap().to_string()),
-            ]
+            ].push_maybe(toggle)
         };
 
         container(
@@ -334,8 +355,8 @@ fn do_copy(op: &Operation) -> Result<Vec<String>, Error> {
         .join("Account")
         .join(&dst_account);
 
-    if src_account == dst_account {
-        log.push(String::from("skipping account copy - accounts are the same"));
+    if src_account == dst_account || !op.overwrite_account {
+        log.push(String::from("skipping account copy."));
     } else {
         // client configuration
         for file in account_files {
