@@ -197,6 +197,7 @@ impl Operation {
                     Operation::ver_column(self, true).width(FillPortion(2)), // source
                     Operation::ver_column(self, false).width(FillPortion(2)) // target
                 ]
+                .spacing(5)
                 .height(FillPortion(7)),
 
                 container(
@@ -210,7 +211,11 @@ impl Operation {
                 .padding(8)
                 .style(|theme: &Theme| {
                     container::Style::default()
-                        .border(border::color(theme.palette().primary).width(2).rounded(5))
+                        .border(
+                            border::color(theme.palette().primary)
+                            .width(2)
+                            .rounded(5)
+                        )
                 })
                 .height(FillPortion(2))
                 .width(Fill),
@@ -289,9 +294,17 @@ impl Operation {
         )
         .width(Fill)
         .height(Fill)
-        .style(container::bordered_box)
         .padding(10)
         .align_x(alignment::Horizontal::Center)
+        .style(|theme: &Theme| {
+            container::Style::default()
+                .border(
+                    border::color(theme.palette().primary)
+                    .width(2)
+                    .rounded(5)
+                )
+                .background(theme.extended_palette().background.weak.color)
+        })
         .into()
     }
 }
