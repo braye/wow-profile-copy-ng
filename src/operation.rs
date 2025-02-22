@@ -25,13 +25,10 @@ pub struct Operation {
 #[derive(Debug, Clone)]
 pub enum Message {
     Install,
-    SrcVer(Version),
-    SrcWtf(Wtf),
-    DstVer(Version),
-    DstWtf(Wtf),
+    Version(Version, bool),
+    Wtf(Wtf, bool),
     Copy,
-    ResetSrc,
-    ResetDst,
+    Reset(bool)
 }
 
 
@@ -106,18 +103,29 @@ impl Operation {
                     self.dst_wtf = None;
                 }
             },
-            Message::ResetSrc => {
-                self.src_ver = None;
-                self.src_wtf = None;
+            Message::Reset(is_source) => {
+                if is_source {
+                    self.src_ver = None;
+                    self.src_wtf = None;
+                } else {
+                    self.dst_ver = None;
+                    self.dst_wtf = None;
+                }
             },
-            Message::ResetDst => {
-                self.dst_ver = None;
-                self.dst_wtf = None;
+            Message::Version(ver, is_source) => {
+                if is_source {
+                    self.src_ver = Some(ver)
+                } else {
+                    self.dst_ver = Some(ver)
+                }
             },
-            Message::SrcVer(ver) => self.src_ver = Some(ver),
-            Message::DstVer(ver) => self.dst_ver = Some(ver),
-            Message::SrcWtf(wtf) => self.src_wtf = Some(wtf),
-            Message::DstWtf(wtf) => self.dst_wtf = Some(wtf),
+            Message::Wtf(wtf, is_source) => {
+                if is_source {
+                    self.src_wtf = Some(wtf)
+                } else {
+                    self.dst_wtf = Some(wtf)
+                }
+            },
             Message::Copy => {
                 match do_copy(self) {
                     Ok(l) => self.copy_logs = Some(l),
@@ -151,10 +159,11 @@ impl Operation {
         if self.install.is_none() {
             return container(
                 column![
-                button(text("Select WoW Install Directory"))
-                .on_press(Message::Install)
-            ]
-            .spacing(10))
+                    button(text("Select WoW Install Directory"))
+                    .on_press(Message::Install)
+                ]
+                .spacing(10)
+            )
             .padding(10)
             .center_x(Fill)
             .center_y(Fill)
@@ -173,22 +182,45 @@ impl Operation {
             )
         };
 
-        // todo: clean this mess up
         container(
             column![
                 column![
-                    text("Installation Folder: ".to_owned() + install.install_dir.to_str().unwrap()).center(),
-                    button("Change").on_press(Message::Install)
-                ].spacing(15),
+                    text("Installation Folder: ".to_owned() + install.install_dir.to_str().unwrap())
+                    .center(),
+
+                    button("Change")
+                    .on_press(Message::Install)
+                ]
+                .spacing(15),
+
                 row![
                     Operation::ver_column(self, true).width(FillPortion(2)), // source
                     Operation::ver_column(self, false).width(FillPortion(2)) // target
-                ].height(FillPortion(7)),
-                container(column![text("Logs"), horizontal_rule(2), log].spacing(5)).padding(8).style(|theme: &Theme| {
+                ]
+                .height(FillPortion(7)),
+
+                container(
+                    column![
+                        text("Logs"),
+                        horizontal_rule(2),
+                        log
+                    ]
+                    .spacing(5)
+                )
+                .padding(8)
+                .style(|theme: &Theme| {
                     container::Style::default()
                         .border(border::color(theme.palette().primary).width(2).rounded(5))
-                }).height(FillPortion(2)).width(Fill),
-                row![button("Go!").padding(5).on_press(Message::Copy).style(button::success)]
+                })
+                .height(FillPortion(2))
+                .width(Fill),
+
+                row![
+                    button("Go!")
+                    .padding(5)
+                    .on_press(Message::Copy)
+                    .style(button::success)
+                ]
             ]
             .spacing(10)
         )
@@ -200,43 +232,18 @@ impl Operation {
     }
 
     fn ver_column(&self, is_source: bool) -> Container<Message> {
-        //todo: clean this up, tuple return/destructuring assignment?
-        let ver = if is_source {
-            &self.src_ver
+        let (ver, wtf) = if is_source {
+            (&self.src_ver, &self.src_wtf)
         } else {
-            &self.dst_ver
-        };
-
-        let wtf = if is_source {
-            &self.src_wtf
-        } else {
-            &self.dst_wtf
-        };
-
-        let ver_msg = if is_source {
-            Message::SrcVer
-        } else {
-            Message::DstVer
-        };
-
-        let wtf_msg = if is_source {
-            Message::SrcWtf
-        } else {
-            Message::DstWtf
-        };
-
-        let rst_msg = if is_source {
-            Message::ResetSrc
-        } else {
-            Message::ResetDst
+            (&self.dst_ver, &self.dst_wtf)
         };
 
         let install = self.install.as_ref().unwrap();
 
-        let widgets = if ver.is_none() {
+        let buttons = if ver.is_none() {
             column(install.versions.iter().map(|v| {
                 button(text(v.to_string()).width(Fill).center())
-                .on_press(ver_msg(v.clone()))
+                .on_press(Message::Version(v.clone(), is_source))
                 .height(50)
                 .into()
             }))
@@ -248,32 +255,37 @@ impl Operation {
                 .unwrap()
                 .wtfs
                 .iter()
+                // sometimes, character folders don't have a savedvariables folder.
+                // it doesn't make sense to show these as sources, so don't.
                 .filter(|w| !is_source || (is_source && w.has_vars))
                 .map(|w| {
                     button(text(w.to_string()).width(Fill).center())
-                    .on_press(wtf_msg(w.clone()))
+                    .on_press(Message::Wtf(w.clone(), is_source))
                     .into()
                 })
             )
         } else {
-            column![text(ver.as_ref().unwrap().to_string()),
-                    text(wtf.as_ref().unwrap().to_string()),]
-        };
-
-        let source_text = if is_source {
-            text("Source")
-        } else {
-            text("Target")
+            column![
+                text(ver.as_ref().unwrap().to_string()),
+                text(wtf.as_ref().unwrap().to_string()),
+            ]
         };
 
         container(
             column![
-                source_text,
+                text(if is_source {"Source"} else {"Target"}),
+
                 scrollable(
-                    widgets.padding(20).spacing(15)
-                ).height(FillPortion(9)),
-                button("Reset").on_press(rst_msg)
-            ].spacing(10).width(Fill).height(Fill)
+                    buttons.padding(20).spacing(15)
+                )
+                .height(FillPortion(9)),
+
+                button("Reset")
+                .on_press(Message::Reset(is_source))
+            ]
+            .spacing(10)
+            .width(Fill)
+            .height(Fill)
         )
         .width(Fill)
         .height(Fill)
