@@ -13,7 +13,7 @@ pub struct Install {
     pub versions: Vec<Version>
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Version {
     pub name: OsString,
     pub wtfs: Vec<Wtf>

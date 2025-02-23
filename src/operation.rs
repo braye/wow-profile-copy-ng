@@ -5,7 +5,7 @@
  */
 
 use crate::wow::{self, Install, Version, Wtf};
-use iced::{alignment, border, Element, Fill, FillPortion, Font, Theme};
+use iced::{alignment, border, font, Element, Fill, FillPortion, Font, Theme};
 use iced::widget::{button, checkbox, column, container, horizontal_rule, row, scrollable, text, Container};
 use std::{env, path::PathBuf, ffi::OsString, fs, io::Error};
 use dark_light;
@@ -167,7 +167,15 @@ impl Operation {
             return None
         }
 
-        Some(self.src_wtf.as_ref().unwrap().account != self.dst_wtf.as_ref().unwrap().account)
+        Some(self.src_wtf.as_ref().unwrap().account == self.dst_wtf.as_ref().unwrap().account)
+    }
+
+    fn is_same_ver(&self) -> Option<bool> {
+        if self.src_ver.is_none() || self.dst_ver.is_none() {
+            return None
+        }
+
+        Some(self.src_ver.as_ref().unwrap() == self.dst_ver.as_ref().unwrap())
     }
 
     pub fn view(&self) -> Element<Message> {
@@ -217,7 +225,10 @@ impl Operation {
 
                 container(
                     column![
-                        text("Logs"),
+                        text("Logs").font(Font {
+                            weight: font::Weight::Bold,
+                            ..Default::default()
+                        }),
                         horizontal_rule(2),
                         log
                     ]
@@ -285,21 +296,26 @@ impl Operation {
                 })
             )
         } else {
-            let toggle = if !is_source && self.is_same_account().unwrap_or(false) {
+            let toggle = if !is_source && 
+            (!self.is_same_account().unwrap_or(false) || !self.is_same_ver().unwrap_or(false)) {
                 Some(checkbox("Overwrite account-level variables?", self.overwrite_account)
                 .on_toggle(Message::OverwriteToggle))
             } else {
                 None
             };
             column![
-                text(ver.as_ref().unwrap().to_string()),
-                text(wtf.as_ref().unwrap().to_string()),
+                text(format!("Version: {}", ver.as_ref().unwrap().to_string())),
+                text(format!("Character: {}", wtf.as_ref().unwrap().to_string())),
+                text(format!("Account: {}", wtf.as_ref().unwrap().account.to_str().unwrap_or_default()))
             ].push_maybe(toggle)
         };
 
         container(
             column![
-                text(if is_source {"Source"} else {"Target"}),
+                text(if is_source {"Source"} else {"Target"}).font(Font {
+                    weight: font::Weight::Bold,
+                    ..Default::default()
+                }),
 
                 scrollable(
                     buttons.padding(20).spacing(15)
