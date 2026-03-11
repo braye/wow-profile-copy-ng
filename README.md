@@ -53,3 +53,7 @@ Leaving `synchronizeBindings` turned off entirely also solves the issue.
 ## How do I copy the spell placements on my hotbars?
 
 As far as I can tell, spell -> bar slot assignments are saved to the realm. That means there's no way for this tool to copy them, because the data doesn't exist on your computer. However, something like [MySlot](https://github.com/tg123/myslot) can help with that.
+
+## One of my WoW client versions isn't showing up.
+
+In order to make a WoW version show up in the app, it must have been launched and a character logged into at least once. The WoW client won't create any of the folder structure the app needs to use that version as a source or target without this having been done.
