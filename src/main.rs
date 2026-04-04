@@ -15,10 +15,9 @@ mod wow;
 
 fn fonts() -> Vec<Cow<'static, [u8]>> {
     vec![
-        include_bytes!("../assets/fonts/B612-Regular.ttf").as_slice().into(),
-        include_bytes!("../assets/fonts/B612-Bold.ttf").as_slice().into(),
-        include_bytes!("../assets/fonts/B612Mono-Regular.ttf").as_slice().into(),
-        include_bytes!("../assets/fonts/B612Mono-Bold.ttf").as_slice().into(),
+        include_bytes!("../assets/fonts/IBMPlexSerif-Regular.ttf").as_slice().into(),
+        include_bytes!("../assets/fonts/IBMPlexSerif-Bold.ttf").as_slice().into(),
+        include_bytes!("../assets/fonts/AnonymousPro-Regular.ttf").as_slice().into(),
         ]
 }
 
@@ -27,7 +26,7 @@ fn main() -> iced::Result {
         id: Some(String::from("wow-profile-copy-ng")),
         fonts: fonts(),
         default_font: Font {
-            family: font::Family::Name("B612"),
+            family: font::Family::Name("IBM Plex Serif"),
             weight: font::Weight::Normal,
             stretch: font::Stretch::Normal,
             style: font::Style::Normal

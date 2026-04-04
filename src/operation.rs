@@ -148,9 +148,9 @@ impl Operation {
     pub fn theme(&self) -> Theme  {
         // there's probably a way to do this without this crate but i'm feeling lazy
         match dark_light::detect().unwrap_or_else(|_e| dark_light::Mode::Unspecified) {
-            dark_light::Mode::Dark => Theme::SolarizedDark,
-            dark_light::Mode::Light => Theme::SolarizedLight,
-            dark_light::Mode::Unspecified => Theme::SolarizedDark,
+            dark_light::Mode::Dark => Theme::CatppuccinMacchiato,
+            dark_light::Mode::Light => Theme::CatppuccinLatte,
+            dark_light::Mode::Unspecified => Theme::CatppuccinMacchiato,
         }
     }
 
@@ -201,7 +201,7 @@ impl Operation {
             scrollable(
                 text(
                     self.copy_logs.as_ref().unwrap().join("\n")
-                ).font(Font::with_name("B612 Mono"))
+                ).font(Font::with_name("Anonymous Pro"))
             )
         };
 
@@ -226,6 +226,7 @@ impl Operation {
                 container(
                     column![
                         text("Logs").font(Font {
+                            family: font::Family::Name("IBM Plex Serif"),
                             weight: font::Weight::Bold,
                             ..Default::default()
                         }),
@@ -313,6 +314,7 @@ impl Operation {
         container(
             column![
                 text(if is_source {"Source"} else {"Target"}).font(Font {
+                    family: font::Family::Name("IBM Plex Serif"),
                     weight: font::Weight::Bold,
                     ..Default::default()
                 }),
