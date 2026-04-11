@@ -21,6 +21,8 @@ pub struct Operation {
     dst_wtf: Option<Wtf>,
     copy_logs: Option<Vec<String>>,
     overwrite_account: bool,
+    src_filter: String,
+    dst_filter: String,
 }
 
 #[derive(Debug, Clone)]
@@ -31,6 +33,8 @@ pub enum Message {
     Copy,
     Reset(bool),
     OverwriteToggle(bool),
+    SetSrcFilter(String),
+    SetDstFilter(String)
 }
 
 
@@ -51,7 +55,9 @@ impl std::default::Default for Operation {
                     src_wtf: None,
                     dst_wtf: None,
                     copy_logs: None,
-                    overwrite_account: true
+                    overwrite_account: true,
+                    src_filter: "".to_string(),
+                    dst_filter: "".to_string()
                 }
             }
             folder = PathBuf::from(home.unwrap())
@@ -65,7 +71,9 @@ impl std::default::Default for Operation {
                 src_wtf: None,
                 dst_wtf: None,
                 copy_logs: None,
-                overwrite_account: true
+                overwrite_account: true,
+                src_filter: "".to_string(),
+                dst_filter: "".to_string()
             }
         }
 
@@ -78,7 +86,9 @@ impl std::default::Default for Operation {
                     src_wtf: None,
                     dst_wtf: None,
                     copy_logs: None,
-                    overwrite_account: true
+                    overwrite_account: true,
+                    src_filter: "".to_string(),
+                    dst_filter: "".to_string()
                 }
             }
             Err(_) => {
@@ -89,7 +99,9 @@ impl std::default::Default for Operation {
                     src_wtf: None,
                     dst_wtf: None,
                     copy_logs: None,
-                    overwrite_account: true
+                    overwrite_account: true,
+                    src_filter: "".to_string(),
+                    dst_filter: "".to_string()
                 }
             }
         }
@@ -142,6 +154,12 @@ impl Operation {
                     }
                 }
             },
+            Message::SetSrcFilter(filter) => {
+                    self.src_filter = filter
+            },
+            Message::SetDstFilter(filter) => {
+                    self.dst_filter = filter
+            }
         }
     }
 
@@ -263,6 +281,30 @@ impl Operation {
         .into()
     }
 
+    fn wtf_filter(&self, wtf: &Wtf, is_source: bool) -> bool {
+        if is_source {
+            return &self.src_filter == "" || 
+            wtf.account.to_str().unwrap_or_default().to_lowercase().contains(&self.src_filter.to_lowercase()) ||
+            wtf.character.to_str().unwrap_or_default().to_lowercase().contains(&self.src_filter.to_lowercase()) ||
+            wtf.realm.to_str().unwrap_or_default().to_lowercase().contains(&self.src_filter.to_lowercase())
+        } else {
+            return &self.dst_filter == "" || 
+            wtf.account.to_str().unwrap_or_default().to_lowercase().contains(&self.dst_filter.to_lowercase()) ||
+            wtf.character.to_str().unwrap_or_default().to_lowercase().contains(&self.dst_filter.to_lowercase()) ||
+            wtf.realm.to_str().unwrap_or_default().to_lowercase().contains(&self.dst_filter.to_lowercase())
+        }
+    }
+
+    fn ver_filter(&self, ver: &Version, is_source: bool) -> bool {
+        if is_source {
+            return &self.src_filter == "" || 
+            ver.to_string().to_lowercase().contains(&self.src_filter.to_lowercase())
+        } else {
+            return &self.dst_filter == "" || 
+            ver.to_string().to_lowercase().contains(&self.dst_filter.to_lowercase())
+        }
+    }
+
     fn ver_column(&self, is_source: bool) -> Container<Message> {
         let (ver, wtf) = if is_source {
             (&self.src_ver, &self.src_wtf)
@@ -273,7 +315,10 @@ impl Operation {
         let install = self.install.as_ref().unwrap();
 
         let buttons = if ver.is_none() {
-            column(install.versions.iter().map(|v| {
+            column(install.versions.iter()
+            // name filtering
+            .filter(|v| self.ver_filter(v, is_source))
+            .map(|v| {
                 button(text(v.to_string()).width(Fill).center())
                 .on_press(Message::Version(v.clone(), is_source))
                 .height(50)
@@ -290,6 +335,8 @@ impl Operation {
                 // sometimes, character folders don't have a savedvariables folder.
                 // it doesn't make sense to show these as sources, so don't.
                 .filter(|w| !is_source || (is_source && w.has_vars))
+                // name filtering
+                .filter(|w| self.wtf_filter(w, is_source))
                 .map(|w| {
                     button(text(w.to_string()).width(Fill).center())
                     .on_press(Message::Wtf(w.clone(), is_source))
@@ -320,6 +367,9 @@ impl Operation {
                     weight: font::Weight::Bold,
                     ..Default::default()
                 }),
+
+                text_input("Filter...", if is_source {&self.src_filter} else  {&self.dst_filter})
+                .on_input(if is_source {Message::SetSrcFilter} else {Message::SetDstFilter}),
 
                 scrollable(
                     buttons.padding(20).spacing(15)
