@@ -32,9 +32,11 @@ fn main() -> iced::Result {
             style: font::Style::Normal
         },
         default_text_size: iced::Pixels(16.0),
-        antialiasing: true
+        antialiasing: true,
+        vsync: true
     };
-    iced::application("wow-profile-copy-ng", Operation::update, Operation::view)
+    iced::application(Operation::default, Operation::update, Operation::view)
+    .title("wow-profile-copy-ng")
     .settings(settings)
     .theme(Operation::theme)
     .run()

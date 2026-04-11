@@ -5,5 +5,5 @@ edition = "2021"
 
 [dependencies]
 dark-light = "2.0.0"
-iced = "0.13.1"
+iced = "0.14.0"
 rfd = "0.15.2"

@@ -5,8 +5,8 @@
  */
 
 use crate::wow::{self, Install, Version, Wtf};
-use iced::{alignment, border, font, Element, Fill, FillPortion, Font, Theme};
-use iced::widget::{button, checkbox, column, container, horizontal_rule, row, scrollable, text, Container};
+use iced::{Element, Fill, FillPortion, Font, Renderer, Theme, alignment, border, font};
+use iced::widget::{Container, button, checkbox, column, container, row, scrollable, text, text_input};
 use std::{env, path::PathBuf, ffi::OsString, fs, io::Error};
 use dark_light;
 
@@ -230,7 +230,7 @@ impl Operation {
                             weight: font::Weight::Bold,
                             ..Default::default()
                         }),
-                        horizontal_rule(2),
+                        // horizontal_rule(2),
                         log
                     ]
                     .spacing(5)
@@ -299,7 +299,8 @@ impl Operation {
         } else {
             let toggle = if !is_source && 
             (!self.is_same_account().unwrap_or(false) || !self.is_same_ver().unwrap_or(false)) {
-                Some(checkbox("Overwrite account-level variables?", self.overwrite_account)
+                Some(checkbox::<Message, Theme, Renderer>(self.overwrite_account)
+                .label("Overwrite account-level variables?")
                 .on_toggle(Message::OverwriteToggle))
             } else {
                 None
@@ -307,8 +308,9 @@ impl Operation {
             column![
                 text(format!("Version: {}", ver.as_ref().unwrap().to_string())),
                 text(format!("Character: {}", wtf.as_ref().unwrap().to_string())),
-                text(format!("Account: {}", wtf.as_ref().unwrap().account.to_str().unwrap_or_default()))
-            ].push_maybe(toggle)
+                text(format!("Account: {}", wtf.as_ref().unwrap().account.to_str().unwrap_or_default())),
+                toggle
+            ]
         };
 
         container(
